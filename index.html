@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D1322">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trip Wallet">
+<title>Trip Wallet</title>
+<style>
+  :root {
+    --night: #0D1322; --surface: #161E33; --surface2: #1C2640; --field: #0A0F1C; --line: #263150;
+    --text: #EDF0F7; --mut: #8C97B2; --teal: #2CD3B5; --blue: #4C8DFF; --gold: #E6C46A; --red: #FF6B6B; --amber: #F5B83D;
+    --num: ui-rounded, "SF Pro Rounded", -apple-system, "Segoe UI", sans-serif;
+    --body: -apple-system, BlinkMacSystemFont, "Noto Sans Thai", "Leelawadee UI", "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--night); color: var(--text); font: 16px/1.5 var(--body); }
+  body { padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); min-height: 100vh; }
+  .num { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  main { max-width: 480px; margin: 0 auto; padding: 0 18px 120px; }
+
+  /* ---------- ฟอร์ม ---------- */
+  label.f { display: block; font-size: 14px; color: var(--mut); margin: 16px 0 6px; }
+  input[type=text], input[type=date], input:not([type]) {
+    width: 100%; min-height: 50px; font: 18px var(--body); padding: 10px 14px; border-radius: 14px;
+    border: 1px solid var(--line); background: var(--field); color: var(--text); -webkit-appearance: none; appearance: none;
+  }
+  input[type=date] { font-family: var(--num); color-scheme: dark; }
+  input.amount { font: 600 22px var(--num); font-variant-numeric: tabular-nums; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  input::placeholder { color: #4D5875; }
+  .hint { color: var(--mut); font-size: 14px; margin: 6px 0 0; }
+  .warn { color: var(--amber); font-size: 14px; margin: 6px 0 0; }
+
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: 14px; min-height: 44px; padding: 0 16px; background: none; }
+  .btn-main { width: 100%; min-height: 56px; background: var(--teal); color: #052620; font-weight: 700; font-size: 18px; }
+  .btn-main:active { transform: scale(.98); }
+  .btn-line { width: 100%; min-height: 50px; border: 1px solid var(--line); color: var(--text); }
+  .btn-danger { width: 100%; min-height: 50px; border: 1px solid #5C2B36; color: var(--red); }
+  .btn-add { background: var(--surface2); color: var(--teal); font-weight: 600; font-size: 15px; }
+
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg button { flex: 1 1 0; min-width: 72px; min-height: 48px; background: var(--field); border: 1px solid var(--line); color: var(--mut); }
+  .seg button.on { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+
+  .row2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 10px; }
+
+  /* สวิตช์เปิด/ปิด */
+  .sw { position: relative; width: 52px; height: 32px; flex: none; }
+  .sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .sw span { position: absolute; inset: 0; background: var(--line); border-radius: 99px; transition: background .2s; pointer-events: none; }
+  .sw span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .sw input:checked + span { background: var(--teal); }
+  .sw input:checked + span::after { transform: translateX(20px); }
+  .sw input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+  /* ---------- Wizard ---------- */
+  .wiz-top { padding: 22px 0 8px; }
+  .steps { display: flex; gap: 6px; margin-bottom: 18px; }
+  .steps i { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
+  .steps i.done { background: var(--teal); }
+  .wiz-top small { color: var(--mut); font-family: var(--num); }
+  .wiz-top h1 { font-size: 28px; line-height: 1.25; margin: 2px 0 6px; font-weight: 700; }
+  .wiz-top p { color: var(--mut); margin: 0; }
+  .wiz-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 28px; }
+  .wiz-nav.single { grid-template-columns: 1fr; }
+
+  .person { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+  .person input { flex: 1; }
+  .person.off input { opacity: .35; }
+
+  .wsec { margin-top: 26px; }
+  .wsec-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .prow { padding: 4px 0; }
+  .prow .who { font-weight: 600; margin: 14px 0 6px; }
+  .thb { font-family: var(--num); color: var(--mut); font-size: 14px; min-height: 21px; }
+  .total-line { margin-top: 18px; padding: 14px 16px; border-radius: 14px; background: var(--surface); display: flex; justify-content: space-between; align-items: baseline; }
+  .total-line b { font: 700 22px var(--num); }
+
+  /* ---------- กระเป๋าเงิน (ชิ้นเด่นของงาน) ---------- */
+  .wallet {
+    position: relative; overflow: hidden; border-radius: 18px; padding: 18px 20px; aspect-ratio: 1.586;
+    display: flex; flex-direction: column; justify-content: space-between; text-align: left; width: 100%;
+  }
+  .wallet.card { background: linear-gradient(135deg, #1D3FA8 0%, #1569B8 48%, #12A79A 100%); color: #fff; }
+  .wallet .chip { width: 38px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #F2DC9B, #C9A54E); opacity: .9; flex: none; }
+  .wallet.card::after { content: ""; position: absolute; inset: -40% -10% auto auto; width: 70%; height: 140%; transform: rotate(18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent); pointer-events: none; }
+  .wallet.cash { background: #221D12; color: var(--gold); border: 1px solid #4A3F22; }
+  .wallet.cash::after { content: "円"; position: absolute; right: -8px; bottom: -42px; font: 700 170px/1 "Hiragino Mincho ProN", "Yu Mincho", serif; color: rgba(230,196,106,.09); pointer-events: none; }
+  .wallet .w-top { display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1; }
+  .wallet .w-name { font-weight: 700; font-size: 17px; }
+  .wallet .w-holder { font-size: 13px; opacity: .8; }
+  .wallet .w-bal { position: relative; z-index: 1; }
+  .wallet .w-bal b { display: block; font: 700 34px/1.1 var(--num); font-variant-numeric: tabular-nums; }
+  .wallet .w-bal span { font: 14px var(--num); opacity: .8; }
+  .wallet .meter { height: 4px; border-radius: 4px; background: rgba(255,255,255,.18); margin-top: 10px; overflow: hidden; }
+  .wallet .meter i { display: block; height: 100%; background: currentColor; border-radius: 4px; }
+  .wallet.low .meter i { background: var(--red); }
+  .wallet .lowtag { font-size: 12px; font-weight: 700; background: var(--red); color: #fff; padding: 2px 8px; border-radius: 99px; }
+  .wallet.mini { aspect-ratio: auto; min-height: 76px; padding: 14px 16px; border-radius: 14px; }
+  .wallet.mini.cash::after { font-size: 90px; bottom: -22px; }
+
+  .rail { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -18px; padding: 4px 18px 8px; scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail > * { flex: 0 0 84%; scroll-snap-align: center; }
+
+  /* ---------- หน้าหลัก ---------- */
+  .bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 0 4px; }
+  .bar h1 { font-size: 20px; margin: 0; }
+  .bar .sub { color: var(--mut); font-size: 14px; font-family: var(--num); }
+  .icon-btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; color: var(--mut); }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .grand { margin: 18px 0 16px; }
+  .grand span { color: var(--mut); font-size: 14px; }
+  .grand b { display: block; font-variant-numeric: tabular-nums; font: 700 44px/1.1 var(--num); font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .grand em { font: normal 16px var(--num); color: var(--mut); }
+
+  h2.sec { font-size: 17px; margin: 30px 0 6px; display: flex; justify-content: space-between; align-items: center; }
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list button { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 0; min-height: 64px; border-radius: 0; border-bottom: 1px solid var(--line); }
+  .list li:last-child button { border-bottom: 0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .dot.card { background: var(--teal); } .dot.cash { background: var(--gold); }
+  .list .mid { flex: 1; min-width: 0; }
+  .list .mid small { display: block; color: var(--mut); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .end { text-align: right; font-family: var(--num); }
+  .list .end small { display: block; color: var(--mut); font-size: 13px; }
+  .empty { color: var(--mut); padding: 18px 0; }
+  .grand .today-meter { height: 6px; border-radius: 6px; background: var(--surface2); margin: 10px 0 8px; overflow: hidden; }
+  .grand .today-meter i { display: block; height: 100%; background: var(--teal); border-radius: 6px; }
+  .grand.over b { color: var(--red); }
+  .grand.over .today-meter i { background: var(--red); }
+  .totline { color: var(--mut); margin: 0 0 16px; font-size: 15px; }
+  .totline b { color: var(--text); font-size: 17px; }
+  .center { text-align: center; }
+  .taxstrip { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 22px; padding: 14px 16px; border-radius: 14px; background: var(--surface); border-left: 3px solid var(--gold); }
+  .taxstrip small { display: block; color: var(--mut); font-size: 13px; }
+  .taxstrip .end { color: var(--gold); font-weight: 600; }
+  .bars { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 12px; }
+  .bars li { display: grid; grid-template-columns: 7.5em 1fr auto; align-items: center; gap: 10px; font-size: 15px; }
+  .bars .bl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bars .bt { height: 10px; background: var(--surface); border-radius: 0 4px 4px 0; }
+  .bars .bt i { display: block; height: 100%; background: var(--teal); border-radius: 0 4px 4px 0; }
+  .bars .bv { min-width: 5.2em; text-align: right; }
+  .lrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; min-height: 60px; border-bottom: 1px solid var(--line); }
+  .list li:last-child .lrow { border-bottom: 0; }
+  .lrow .mid { flex: 1; min-width: 0; }
+  .lrow .mid small, .lrow .end small { display: block; color: var(--mut); font-size: 13px; }
+  .lrow .end { text-align: right; font-family: var(--num); }
+  .big { font-size: 22px; font-weight: 700; color: var(--teal); }
+  .amt-wrap { position: relative; margin-top: 8px; }
+  .amt-wrap span { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font: 600 30px var(--num); color: var(--mut); pointer-events: none; }
+  input.amt { min-height: 74px; font: 700 38px var(--num); padding-left: 48px; font-variant-numeric: tabular-nums; }
+  .cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cats button { min-height: 66px; padding: 6px 2px; background: var(--field); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; color: var(--mut); line-height: 1.2; }
+  .cats button i { font-style: normal; font-size: 22px; }
+  .cats button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chips label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); cursor: pointer; }
+  .chips input { width: 18px; height: 18px; accent-color: var(--teal); }
+  .taxbox { margin-top: 18px; padding: 4px 16px 16px; border-radius: 16px; background: var(--surface2); border-left: 3px solid var(--gold); }
+  .taxhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; }
+  .taxhead b { display: block; } .taxhead small { color: var(--mut); font-size: 13px; }
+  .taxres { margin-top: 12px; font-size: 15px; }
+  .taxres .ok { color: var(--teal); } .taxres .no { color: var(--amber); }
+  .linkbtn { min-height: 32px; padding: 0; color: var(--teal); font-size: 14px; text-decoration: underline; }
+  details.more { margin-top: 14px; color: var(--mut); }
+  details.more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 15px; }
+  input[type=datetime-local] { width: 100%; min-height: 50px; font: 17px var(--num); padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--field); color: var(--text); color-scheme: dark; -webkit-appearance: none; }
+  .exp-tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: rgba(230,196,106,.15); color: var(--gold); margin-left: 6px; vertical-align: 2px; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: center; align-items: flex-end;
+    background: rgba(22,30,51,.96); border-top: 1px solid var(--line); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .tabs button { position: relative; flex: 1; max-width: 96px; min-height: 52px; padding: 4px 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--mut); font-size: 12px; }
+  .tabs button svg { width: 24px; height: 24px; }
+  .tabs button.on { color: var(--teal); }
+  .tabs button em { position: absolute; top: 2px; left: 54%; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--gold); color: #2A2208; font: 700 11px/18px var(--num); font-style: normal; }
+  .tabs .plus { flex: none; width: 60px; height: 60px; min-height: 60px; border-radius: 20px; background: var(--teal); color: #052620; margin: -22px 8px 2px; box-shadow: 0 8px 22px rgba(0,0,0,.45), 0 0 0 5px var(--night); justify-content: center; }
+  .tabs .plus svg { width: 28px; height: 28px; }
+  .tabs .plus:active { transform: scale(.95); }
+  button.taxstrip { width: 100%; text-align: left; min-height: 64px; }
+  .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .filters select { width: 100%; min-height: 46px; font: 16px var(--body); color: var(--text); background: var(--field); border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; -webkit-appearance: none; appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--mut) 50%), linear-gradient(135deg, var(--mut) 50%, transparent 50%); background-position: calc(100% - 18px) 20px, calc(100% - 13px) 20px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .hsum { margin: 16px 0 4px; padding: 14px 16px; border-radius: 14px; background: var(--surface); display: grid; gap: 2px; }
+  .hsum span { color: var(--mut); font-size: 14px; } .hsum > b { font: 700 28px var(--num); }
+  .hsum small { color: var(--mut); font-size: 14px; } .hsum small b { color: var(--text); }
+  h2.day { display: flex; justify-content: space-between; font-size: 15px; color: var(--mut); font-weight: 600; margin: 22px 0 0; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .taxsum { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .taxsum > div { background: var(--surface); border-radius: 14px; padding: 14px; display: grid; }
+  .taxsum span { color: var(--mut); font-size: 14px; } .taxsum b { font: 700 24px var(--num); } .taxsum small { color: var(--mut); font-size: 13px; }
+  .gold { color: var(--gold); } .mut { color: var(--mut); }
+  .tips { margin-top: 8px; padding: 2px 14px; border-radius: 14px; background: rgba(245,184,61,.08); border: 1px solid rgba(245,184,61,.25); font-size: 14px; color: #E9D9B0; }
+  .tips p { margin: 10px 0; }
+  .rlist { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+  .rcpt { display: flex; gap: 12px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+  .rcpt.ready { border-color: rgba(44,211,181,.5); }
+  .rc-check { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--mut); min-width: 44px; cursor: pointer; }
+  .rc-check input { width: 26px; height: 26px; accent-color: var(--teal); margin: 2px 0 0; }
+  .rc-main { flex: 1; min-width: 0; } .rc-main small { display: block; color: var(--mut); font-size: 13px; }
+  .rc-nums { display: flex; gap: 16px; margin-top: 6px; font-size: 14px; color: var(--mut); } .rc-nums b { color: var(--text); }
+  .rc-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .btn-line.sm { width: auto; min-height: 44px; font-size: 14px; padding: 0 12px; }
+  textarea#xText { width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--field); color: var(--text);
+    font: 15px/1.55 var(--body); resize: vertical; white-space: pre-wrap; }
+  .install { margin: 14px 0 0; padding: 14px 16px; border-radius: 14px; background: rgba(76,141,255,.12); border: 1px solid rgba(76,141,255,.4); font-size: 14px; }
+  .install p { margin: 6px 0 0; color: #C9D6F2; }
+  .later { color: #56617E; font-size: 13px; text-align: center; margin-top: 36px; }
+
+  /* ---------- Sheet ---------- */
+  .sheet { position: fixed; inset: 0; z-index: 10; }
+  .sheet-bg { position: absolute; inset: 0; background: rgba(4,7,14,.66); animation: fade .2s ease-out; }
+  .sheet-body { position: absolute; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: var(--surface);
+    border-radius: 22px 22px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom)); max-height: 92vh; overflow: auto; animation: up .26s cubic-bezier(.2,.8,.2,1); }
+  .grip { width: 40px; height: 5px; border-radius: 5px; background: var(--line); margin: 0 auto 14px; }
+  .sheet h2 { font-size: 20px; margin: 0 0 4px; }
+  .actions { display: grid; gap: 10px; margin-top: 22px; }
+  @keyframes up { from { transform: translateY(100%); } }
+  @keyframes fade { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .sheet-body, .sheet-bg { animation: none; } }
+
+  .group { margin-top: 26px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .group:first-of-type { border-top: 0; }
+  .group h3 { font-size: 16px; margin: 14px 0 0; }
+
+  #toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top)); transform: translateX(-50%); z-index: 30;
+    background: #26314D; color: #fff; padding: 12px 18px; border-radius: 14px; max-width: 90vw; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  #toast.bad { background: #7A2633; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="tabs" class="tabs" hidden aria-label="เมนูหลัก"></nav>
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-body" id="sheetBody" role="dialog" aria-modal="true"></div>
+</div>
+<div id="toast" role="status" hidden></div>
+
+<script src="tripwallet-core.js"></script>
+<script>
+// ===== Step 4: Setup wizard + Wallets + Top-up + Settings =====
+const APP_VERSION = '1.0.0';
+let store;
+try { store = TW.createStore(window.localStorage); }
+catch (e) { document.getElementById('app').innerHTML = '<p style="padding:24px">เปิดที่เก็บข้อมูลไม่ได้ ถ้าเปิดโหมดส่วนตัว (Private) อยู่ ให้ปิดก่อน</p>'; throw e; }
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const yen = (n) => (n < 0 ? '−' : '') + '¥' + Math.abs(Math.round(n)).toLocaleString('en-US');
+const baht = (n) => (n < 0 ? '−' : '') + '฿' + Math.abs(Math.round(n)).toLocaleString('en-US');
+const when = (iso) => new Date(iso).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const shortDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+const ICON_GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+
+// "30,000" → 30000 / ว่าง → null / พิมพ์ผิด → NaN
+function parseJpy(v) { const s = String(v).replace(/[,\s¥]/g, ''); if (s === '') return null; return /^\d+$/.test(s) ? Number(s) : NaN; }
+const parseRate = (v) => Number(String(v).replace(',', '.').trim());
+// เรทเงินเยนช่วงปกติ ~0.15–0.40 บาท นอกช่วงนี้มักพิมพ์ผิด (เช่น 2.3 แทน 0.23)
+const rateOdd = (r) => r > 0 && (r < 0.15 || r > 0.4);
+
+let toastT;
+function toast(msg, bad) {
+  const t = $('#toast'); t.textContent = msg; t.className = bad ? 'bad' : ''; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
+}
+function safe(fn) {
+  try { fn(); return true; }
+  catch (e) { toast(e.name === 'QuotaExceededError' ? 'พื้นที่เก็บข้อมูลเต็ม บันทึกไม่สำเร็จ' : (e.message || 'เกิดข้อผิดพลาด'), true); return false; }
+}
+
+function seg(name, options, value) {
+  return `<div class="seg" data-seg="${name}">` + options.map(o =>
+    `<button type="button" data-v="${o.v}" class="${o.v === value ? 'on' : ''}" aria-pressed="${o.v === value}">${esc(o.label)}</button>`).join('') + '</div>';
+}
+const segVal = (name, root) => { const b = (root || document).querySelector(`.seg[data-seg="${name}"] .on`); return b ? b.dataset.v : null; };
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.seg button');
+  if (b) {
+    b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    b.parentElement.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (e.target.closest('[data-close]')) closeSheet();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
+
+function openSheet(html) { const b = $('#sheetBody'); b.oninput = null; b.innerHTML = '<div class="grip"></div>' + html; $('#sheet').hidden = false; }
+function closeSheet() { $('#sheet').hidden = true; $('#sheetBody').innerHTML = ''; }
+
+const activePeople = (s) => s.people.filter(p => p.active);
+const activeWallets = (s) => s.wallets.filter(w => w.active);
+const pname = (s, id) => (s.people.find(p => p.id === id) || {}).name || '?';
+
+let view = 'home';
+// iPhone: ข้อมูลใน Safari กับในไอคอนหน้าโฮมแยกกัน → เตือนให้ติดตั้งก่อนกรอกจริง
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+function installBanner() {
+  if (!isIOS() || isStandalone() || location.protocol === 'file:') return '';
+  return `<div class="install"><b>ติดตั้งเป็นแอปก่อนใช้งานจริง</b>
+    <p>กดปุ่มแชร์ <span aria-hidden="true">⎙</span> ด้านล่างของ Safari → <b>เพิ่มไปยังหน้าจอโฮม</b> แล้วเปิดจากไอคอน Trip Wallet ข้อมูลที่กรอกในหน้า Safari นี้จะไม่ตามไปอยู่ในไอคอน</p></div>`;
+}
+
+function render() {
+  const s = store.get();
+  $('#tabs').hidden = !s.setupDone;
+  if (!s.setupDone) { if (!wiz) initWiz(s); renderWiz(); $('#app').insertAdjacentHTML('afterbegin', installBanner()); return; }
+  if (view === 'history') renderHistory(s); else if (view === 'tax') renderTax(s); else renderHome(s);
+  $('#app').insertAdjacentHTML('afterbegin', installBanner());
+  renderTabs();
+}
+function go(v) { view = v; render(); scrollTo(0, 0); }
+const TAB_ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>',
+  tax: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>',
+  set: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>'
+};
+function renderTabs() {
+  const pend = store.summary().tax.pendingCount;
+  const tab = (v, label) => `<button data-go="${v}" class="${view === v ? 'on' : ''}" ${view === v ? 'aria-current="page"' : ''}>${TAB_ICONS[v]}<span>${label}</span>${v === 'tax' && pend ? `<em>${pend}</em>` : ''}</button>`;
+  $('#tabs').innerHTML = tab('home', 'สรุป') + tab('history', 'ประวัติ') +
+    '<button class="plus" id="tabAdd" aria-label="บันทึกรายจ่าย"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg></button>' +
+    tab('tax', 'คืนภาษี') + '<button data-set>' + TAB_ICONS.set + '<span>ตั้งค่า</span></button>';
+  $$('#tabs [data-go]').forEach(b => { b.onclick = () => go(b.dataset.go); });
+  $('#tabAdd').onclick = () => expenseSheet(null);
+  $('#tabs [data-set]').onclick = settingsSheet;
+}
+
+// ================= Wizard ตั้งค่าครั้งแรก =================
+let wiz = null;
+function initWiz(s) {
+  wiz = {
+    step: 1,
+    trip: { ...s.trip },
+    people: s.people.map(p => ({ id: p.id, name: /^คนที่ \d$/.test(p.name) ? '' : p.name, active: p.active })),
+    wallets: s.wallets.slice(0, 2).map(w => ({ id: w.id, name: w.name, kind: w.kind, holderId: w.holderId, use: true })),
+    amounts: {}, // 'w1|p1' → {jpy, rate}
+    rate: s.settings.defaultRate
+  };
+}
+const wizName = (p) => p.name.trim() || ('คนที่ ' + p.id.slice(1));
+
+function renderWiz() {
+  const titles = { 1: ['ทริปนี้ชื่ออะไร', 'ใส่วันไป–กลับด้วย แอปจะบอกได้ว่าแต่ละวันใช้เงินได้เท่าไร'],
+                   2: ['ไปกันกี่คน', 'เปิดเฉพาะคนที่ไปด้วย สูงสุด 5 คน ไม่ใส่ชื่อจะใช้ "คนที่ 1, 2, …"'],
+                   3: ['ใครเอาเงินมาเท่าไร', 'ใส่ยอดเยนที่แต่ละคนเติมเข้าบัตรหรือแลกเป็นเงินสด และเรทตอนแลก (บาทต่อ 1 เยน) คนไหนไม่ได้ลงเงินให้เว้นว่าง'] };
+  const [h, p] = titles[wiz.step];
+  let body = '';
+  if (wiz.step === 1) {
+    body = `
+      <label class="f" for="tName">ชื่อทริป</label><input id="tName" maxlength="40" value="${esc(wiz.trip.name)}">
+      <div class="row2" style="grid-template-columns:1fr 1fr">
+        <div><label class="f" for="tStart">วันไป</label><input id="tStart" type="date" value="${wiz.trip.start}"></div>
+        <div><label class="f" for="tEnd">วันกลับ</label><input id="tEnd" type="date" value="${wiz.trip.end}"></div>
+      </div>
+      <p class="hint">ไม่ใส่วันก็ได้ ใส่ทีหลังได้ในหน้าตั้งค่า</p>
+      <p class="hint" style="margin-top:22px">ย้ายเครื่องหรือข้อมูลหาย? <button type="button" class="linkbtn" id="wRestore">กู้คืนจากไฟล์สำรอง</button></p>`;
+  } else if (wiz.step === 2) {
+    body = wiz.people.map(pp => `
+      <div class="person ${pp.active ? '' : 'off'}" data-pid="${pp.id}">
+        <label class="sw"><input type="checkbox" data-on ${pp.active ? 'checked' : ''} aria-label="เปิดใช้คนที่ ${pp.id.slice(1)}"><span></span></label>
+        <input data-name maxlength="20" placeholder="คนที่ ${pp.id.slice(1)}" value="${esc(pp.name)}" ${pp.active ? '' : 'tabindex="-1"'}>
+      </div>`).join('');
+  } else {
+    const ppl = wiz.people.filter(x => x.active);
+    body = wiz.wallets.map(w => `
+      <section class="wsec" data-wid="${w.id}">
+        <div class="wsec-head">
+          <div class="wallet mini ${w.kind}" style="flex:1"><div class="w-top"><span class="w-name">${w.kind === 'card' ? '💳' : '💴'} ${esc(w.name)}</span></div></div>
+          <label class="sw"><input type="checkbox" data-use ${w.use ? 'checked' : ''} aria-label="ใช้กระเป๋า ${esc(w.name)}"><span></span></label>
+        </div>
+        <div data-wbody ${w.use ? '' : 'hidden'}>
+          <label class="f">${w.kind === 'card' ? 'บัตรเป็นของใคร' : 'ใครถือเงินสดก้อนนี้'}</label>
+          ${seg('holder-' + w.id, ppl.map(x => ({ v: x.id, label: wizName(x) })), ppl.some(x => x.id === w.holderId) ? w.holderId : ppl[0].id)}
+          ${ppl.map(x => { const a = wiz.amounts[w.id + '|' + x.id] || {}; return `
+            <div class="prow" data-key="${w.id}|${x.id}">
+              <div class="who">${esc(wizName(x))}</div>
+              <div class="row2">
+                <input class="amount" inputmode="numeric" data-jpy placeholder="¥ 0" value="${a.jpy || ''}" aria-label="ยอดเยนของ ${esc(wizName(x))}">
+                <input inputmode="decimal" data-rate value="${a.rate || wiz.rate}" aria-label="เรท">
+              </div>
+              <div class="thb" data-thb></div>
+            </div>`; }).join('')}
+        </div>
+      </section>`).join('') + `<div class="total-line"><span>รวมทุกกระเป๋า</span><span><b id="wTotal">¥0</b> <span class="thb" id="wTotalThb"></span></span></div>`;
+  }
+  $('#app').innerHTML = `
+    <div class="wiz-top">
+      <div class="steps" aria-hidden="true">${[1, 2, 3].map(i => `<i class="${i <= wiz.step ? 'done' : ''}"></i>`).join('')}</div>
+      <small>ขั้นที่ ${wiz.step} จาก 3</small>
+      <h1>${h}</h1><p>${p}</p>
+    </div>
+    ${body}
+    <div class="wiz-nav ${wiz.step === 1 ? 'single' : ''}">
+      ${wiz.step > 1 ? '<button class="btn-line" id="wBack">ย้อนกลับ</button>' : ''}
+      <button class="btn-main" id="wNext">${wiz.step < 3 ? 'ถัดไป' : 'เริ่มทริป'}</button>
+    </div>`;
+
+  if (wiz.step === 2) {
+    $('#app').oninput = (e) => {
+      const row = e.target.closest('.person'); if (!row) return;
+      if (e.target.matches('[data-on]')) { row.classList.toggle('off', !e.target.checked); row.querySelector('[data-name]').tabIndex = e.target.checked ? 0 : -1; }
+    };
+  } else if (wiz.step === 3) {
+    const upd = () => {
+      let tj = 0, tt = 0;
+      $$('[data-wid]').forEach(sec => {
+        const use = sec.querySelector('[data-use]').checked;
+        sec.querySelector('[data-wbody]').hidden = !use;
+        sec.querySelectorAll('.prow').forEach(r => {
+          const j = parseJpy(r.querySelector('[data-jpy]').value), rt = parseRate(r.querySelector('[data-rate]').value);
+          const out = r.querySelector('[data-thb]');
+          if (isNaN(j)) { out.innerHTML = '<span class="warn">ใส่เป็นตัวเลขจำนวนเต็ม</span>'; return; }
+          if (!j) { out.textContent = ''; return; }
+          out.innerHTML = rateOdd(rt) ? `<span class="warn">เรท ${esc(r.querySelector('[data-rate]').value)} ดูผิดปกติ ปกติราว 0.2 กว่า</span>` : `≈ ${baht(j * rt)}`;
+          if (use && rt > 0) { tj += j; tt += j * rt; }
+        });
+      });
+      $('#wTotal').textContent = yen(tj); $('#wTotalThb').textContent = tt ? '≈ ' + baht(tt) : '';
+    };
+    $('#app').oninput = upd; upd();
+  } else $('#app').oninput = null;
+
+  if ($('#wRestore')) $('#wRestore').onclick = pickRestore;
+  $('#wNext').onclick = () => { if (collectWiz()) { if (wiz.step < 3) { wiz.step++; renderWiz(); scrollTo(0, 0); } else finishWiz(); } };
+  if ($('#wBack')) $('#wBack').onclick = () => { collectWiz(true); wiz.step--; renderWiz(); scrollTo(0, 0); };
+}
+
+// เก็บค่าจากหน้าปัจจุบัน + ตรวจ (soft = ตอนกดย้อนกลับ ไม่ต้องตรวจ)
+function collectWiz(soft) {
+  if (wiz.step === 1) {
+    wiz.trip = { name: $('#tName').value.trim() || 'ทริปญี่ปุ่น', start: $('#tStart').value, end: $('#tEnd').value };
+    if (!soft && wiz.trip.start && wiz.trip.end && wiz.trip.end < wiz.trip.start) return toast('วันกลับต้องไม่ก่อนวันไป', true), false;
+  } else if (wiz.step === 2) {
+    $$('.person').forEach(r => { const p = wiz.people.find(x => x.id === r.dataset.pid); p.active = r.querySelector('[data-on]').checked; p.name = r.querySelector('[data-name]').value.trim(); });
+    if (soft) return true;
+    const act = wiz.people.filter(p => p.active);
+    if (!act.length) return toast('ต้องมีอย่างน้อย 1 คน', true), false;
+    if (new Set(act.map(wizName)).size !== act.length) return toast('ชื่อซ้ำกัน', true), false;
+  } else {
+    $$('[data-wid]').forEach(sec => {
+      const w = wiz.wallets.find(x => x.id === sec.dataset.wid);
+      w.use = sec.querySelector('[data-use]').checked;
+      w.holderId = segVal('holder-' + w.id, sec);
+      sec.querySelectorAll('.prow').forEach(r => { wiz.amounts[r.dataset.key] = { jpy: r.querySelector('[data-jpy]').value.trim(), rate: r.querySelector('[data-rate]').value.trim() }; });
+    });
+  }
+  return true;
+}
+
+function finishWiz() {
+  const act = wiz.people.filter(p => p.active);
+  const used = wiz.wallets.filter(w => w.use);
+  if (!used.length) return toast('ต้องใช้อย่างน้อย 1 กระเป๋า', true);
+  const rows = [];
+  for (const w of used) for (const p of act) {
+    const a = wiz.amounts[w.id + '|' + p.id] || {}, jpy = parseJpy(a.jpy || ''), rate = parseRate(a.rate || '');
+    if (jpy === null || jpy === 0) continue;
+    if (isNaN(jpy)) return toast(`ยอดของ${wizName(p)} (${w.name}) ต้องเป็นตัวเลขจำนวนเต็ม`, true);
+    if (!(rate > 0 && rate < 10)) return toast(`เรทของ${wizName(p)} (${w.name}) ไม่ถูกต้อง`, true);
+    rows.push({ walletId: w.id, personId: p.id, jpy, rate });
+  }
+  if (!rows.length) return toast('ใส่ยอดเงินอย่างน้อย 1 ช่อง', true);
+
+  const ok = safe(() => {
+    const s = store.get();
+    s.topups.forEach(t => store.deleteTopup(t.id)); // ถ้าเคยกดค้างครึ่งทาง ล้างก่อน
+    act.forEach(p => store.setPerson(p.id, { name: wizName(p), active: true }));
+    wiz.wallets.forEach(w => { if (!s.wallets.find(x => x.id === w.id).active) store.setWallet(w.id, { active: true }); });
+    wiz.wallets.forEach(w => store.setWallet(w.id, { holderId: act.some(p => p.id === w.holderId) ? w.holderId : act[0].id }));
+    wiz.people.filter(p => !p.active).forEach(p => store.setPerson(p.id, { name: '', active: false }));
+    wiz.wallets.filter(w => !w.use).forEach(w => store.setWallet(w.id, { active: false }));
+    store.setTrip(wiz.trip);
+    rows.forEach(r => store.addTopup({ ...r, note: 'ยอดตั้งต้น' }));
+    store.completeSetup();
+  });
+  if (ok) { wiz = null; toast('เริ่มทริปแล้ว'); render(); scrollTo(0, 0); }
+}
+
+// ================= หน้าหลัก =================
+function walletCard(w, sw, s, mini) {
+  sw = sw || { pctLeft: 100, low: false, balanceJpy: 0 };
+  const pct = Math.max(0, Math.min(100, sw.pctLeft));
+  return `
+    <button class="wallet ${w.kind} ${mini ? 'mini' : ''} ${sw.low ? 'low' : ''}" data-wallet="${w.id}" aria-label="กระเป๋า ${esc(w.name)} เหลือ ${yen(sw.balanceJpy)}">
+      <div class="w-top">
+        <div><div class="w-name">${esc(w.name)}</div><div class="w-holder">${esc(pname(s, w.holderId))} ถือ</div></div>
+        ${sw.low ? '<span class="lowtag">ใกล้หมด</span>' : (w.kind === 'card' && !mini ? '<i class="chip"></i>' : '')}
+      </div>
+      ${mini ? '' : `<div class="w-bal">
+        <b>${yen(sw.balanceJpy)}</b>
+        <span>≈ ${baht(sw.balanceThb)} · จาก ${yen(sw.topupJpy)}</span>
+        <div class="meter"><i style="width:${pct}%"></i></div>
+      </div>`}
+    </button>`;
+}
+
+function renderHome(s) {
+  $('#app').oninput = null;
+  const sm = store.summary();
+  const ws = activeWallets(s);
+  const d = sm.daily, T = s.trip, today = sm.today;
+  const phase = !T.start || !T.end ? 'none' : today < T.start ? 'before' : today > T.end ? 'after' : 'during';
+  const sub = phase === 'none' ? 'ยังไม่ได้ใส่วันเดินทาง'
+    : `${shortDate(T.start)} – ${shortDate(T.end)} · ` + (phase === 'during' ? `วันที่ ${d.dayNo} จาก ${d.totalDays}` : phase === 'before' ? `อีก ${Math.round((Date.parse(T.start) - Date.parse(today)) / 864e5)} วันได้ไป` : 'จบทริปแล้ว');
+
+  // ส่วนบน: ระหว่างทริป = งบวันนี้ / นอกช่วงทริป = เงินเหลือรวม
+  let hero;
+  if (phase === 'during') {
+    const left = d.allowToday - d.todaySpent, over = left < 0;
+    const pct = d.allowToday > 0 ? Math.min(100, Math.max(0, d.todaySpent / d.allowToday * 100)) : 100;
+    hero = `
+      <div class="grand ${over ? 'over' : ''}">
+        <span>${over ? 'วันนี้ใช้เกินงบ' : 'วันนี้ใช้ได้อีก'}</span>
+        <b class="num">${yen(Math.abs(left))}</b>
+        <div class="today-meter" role="img" aria-label="ใช้ไป ${yen(d.todaySpent)} จากงบวันนี้ ${yen(d.allowToday)}"><i style="width:${pct}%"></i></div>
+        <em>ใช้ไป ${yen(d.todaySpent)} จากงบวันนี้ ${yen(d.allowToday)}</em>
+      </div>
+      <p class="totline">เงินเหลือทุกกระเป๋า <b class="num">${yen(sm.totalBalanceJpy)}</b> <span class="num">≈ ${baht(sm.totalBalanceThb)}</span></p>`;
+  } else {
+    hero = `
+      <div class="grand">
+        <span>เงินเหลือทุกกระเป๋า</span>
+        <b class="num">${yen(sm.totalBalanceJpy)}</b>
+        <em>≈ ${baht(sm.totalBalanceThb)}${phase === 'before' && d ? ` · เฉลี่ยใช้ได้วันละ ${yen(d.allowPerDayFromStart)}` : ''}</em>
+      </div>`;
+  }
+
+  // ภาษี
+  const tx = sm.tax;
+  const taxStrip = tx.pendingCount || tx.receivedCount ? `
+    <button class="taxstrip" id="taxStrip">
+      <div><b>คืนภาษี</b><small>${tx.pendingCount ? `รอคืน ${tx.pendingCount} ใบ ประมาณ ${yen(tx.pendingJpy)}` : 'ไม่มีใบที่รอคืน'}</small></div>
+      <div class="end num">${tx.receivedCount ? `ได้แล้ว ${baht(tx.receivedThb)}` : ''}</div>
+    </button>` : '';
+
+  // ยอดตามหมวด: แท่งแนวนอน สีเดียว เรียงมากไปน้อย
+  const cats = Object.entries(sm.byCategory).sort((a, b) => b[1] - a[1]);
+  const maxCat = cats.length ? cats[0][1] : 1;
+  const avg = d && phase !== 'before' && sm.totalSpentJpy ? ` · เฉลี่ยวันละ ${yen(d.avgPerDay)}` : '';
+  const spentBlock = cats.length ? `
+    <ul class="bars" aria-label="ยอดใช้จ่ายตามหมวด">
+      ${cats.map(([c, v]) => `<li title="${esc(TW.CATEGORIES[c])}: ${yen(v)} (${Math.round(v / sm.totalSpentJpy * 100)}%)">
+        <span class="bl">${CAT_ICON[c] || ''} ${esc(TW.CATEGORIES[c])}</span>
+        <span class="bt"><i style="width:${Math.max(2, v / maxCat * 100)}%"></i></span>
+        <span class="bv num">${yen(v)}</span></li>`).join('')}
+    </ul>` : '<p class="empty">ยังไม่มีรายจ่าย</p>';
+
+  // แต่ละคน
+  const ppl = activePeople(s).map(p => sm.people[p.id]);
+  const peopleBlock = `<ul class="list">${ppl.map(p => `
+    <li><div class="lrow">
+      <span class="mid">${esc(p.name)}<small>ลงเงิน ${baht(p.contributedThb)}${p.refundCreditThb ? ` · ได้คืนภาษี ${baht(p.refundCreditThb)}` : ''}</small></span>
+      <span class="end">ใช้ ${yen(p.spentJpy)}<small>≈ ${baht(p.netSpentThb)}</small></span>
+    </div></li>`).join('')}</ul>`;
+
+  // เคลียร์ยอด
+  const tr = sm.transfers;
+  const settleBlock = ppl.length < 2 ? '' : `
+    <h2 class="sec">เคลียร์ยอด ถ้าจบทริปตอนนี้</h2>
+    ${tr.length ? `<ul class="list">${tr.map(t => `
+      <li><div class="lrow"><span class="mid"><b>${esc(pname(s, t.from))}</b> โอนให้ <b>${esc(pname(s, t.to))}</b></span><span class="end num big">${baht(t.thb)}</span></div></li>`).join('')}</ul>`
+      : '<p class="empty">ยังไม่มีใครค้างใคร</p>'}
+    <p class="hint">คิดเป็นเงินบาท รวมเงินที่เหลือในกระเป๋า (นับว่าอยู่กับคนถือ) และเงินคืนภาษีแล้ว</p>`;
+  const shareBtn = '<div class="actions"><button class="btn-line" id="btnShare">ส่งสรุปเข้า LINE</button></div>';
+
+  $('#app').innerHTML = `
+    <div class="bar">
+      <div><h1>${esc(T.name)}</h1><div class="sub">${sub}</div></div>
+    </div>
+    ${hero}
+    <div class="rail">${ws.map(w => walletCard(w, sm.wallets[w.id], s)).join('')}</div>
+    <p class="hint center">แตะการ์ดเพื่อเติมเงินหรือดูรายละเอียด</p>
+    ${taxStrip}
+    ${recentBlock(s)}
+    <h2 class="sec">ใช้ไปแล้ว <span class="num">${yen(sm.totalSpentJpy)}</span></h2>
+    <p class="hint" style="margin-top:0">${avg ? avg.slice(3) : ''}</p>
+    ${spentBlock}
+    <h2 class="sec">แต่ละคน</h2>
+    ${peopleBlock}
+    ${settleBlock}
+    ${shareBtn}
+`;
+
+  $$('[data-wallet]').forEach(b => { b.onclick = () => walletSheet(b.dataset.wallet); });
+  $$('[data-exp]').forEach(b => { b.onclick = () => expenseSheet(b.dataset.exp); });
+  if ($('#taxStrip')) $('#taxStrip').onclick = () => go('tax');
+  if ($('#seeAll')) $('#seeAll').onclick = () => go('history');
+  $('#btnShare').onclick = () => exportSheet();
+}
+
+// รายการล่าสุด 3 รายการ (ประวัติเต็มอยู่ขั้นที่ 7)
+function expRow(s, e) {
+  const w = s.wallets.find(x => x.id === e.walletId);
+  const who = e.owners.length === activePeople(s).length && e.owners.length > 1 ? 'หารทุกคน' : e.owners.map(id => pname(s, id)).join(', ');
+  return `<li><button data-exp="${e.id}">
+    <i class="dot ${w.kind}"></i>
+    <span class="mid">${CAT_ICON[e.category] || '⚖️'} ${esc(e.note || e.store || TW.CATEGORIES[e.category])}${e.tax ? '<span class="exp-tag">Tax-free</span>' : ''}
+      <small>${when(e.at)} · ${esc(who)}</small></span>
+    <span class="end">${yen(e.amount)}<small>${esc(w.name)}</small></span>
+  </button></li>`;
+}
+function recentBlock(s) {
+  const list = s.expenses.slice().sort((a, b) => b.at.localeCompare(a.at)).slice(0, 3);
+  if (!list.length) return '<h2 class="sec">ล่าสุด</h2><p class="empty">ยังไม่มีรายจ่าย กดปุ่ม + ตรงกลางด้านล่างเพื่อเริ่ม</p>';
+  return `<h2 class="sec">ล่าสุด <button class="btn-add" id="seeAll">ดูทั้งหมด</button></h2><ul class="list">${list.map(e => expRow(s, e)).join('')}</ul>`;
+}
+
+const CAT_ICON = { food: '🍜', shopping: '🛍️', transport: '🚆', ic: '🪪', souvenir: '🎁', stay: '🏨', ticket: '🎟️', other: '📦' };
+
+// ================= กระเป๋า: รายละเอียด + แก้ไข =================
+function walletSheet(id) {
+  const s = store.get(), sm = store.summary(), w = s.wallets.find(x => x.id === id), sw = sm.wallets[id];
+  const tops = s.topups.filter(t => t.walletId === id).sort((a, b) => b.at.localeCompare(a.at));
+  const ppl = activePeople(s);
+  openSheet(`
+    ${walletCard(w, sw, s)}
+    <div class="actions" style="margin-top:14px"><button class="btn-main" id="wsTop">+ เติมเงินเข้า ${esc(w.name)}</button></div>
+    <div class="group">
+      <h3>ใครลงเงินเท่าไร</h3>
+      <ul class="list">${ppl.map(p => { const j = tops.filter(t => t.personId === p.id).reduce((a, t) => a + t.jpy, 0); const b = tops.filter(t => t.personId === p.id).reduce((a, t) => a + t.jpy * t.rate, 0);
+        return j ? `<li><button tabindex="-1" style="cursor:default"><span class="mid">${esc(p.name)}</span><span class="end">${yen(j)}<small>${baht(b)}</small></span></button></li>` : ''; }).join('') || '<li class="empty">ยังไม่มี</li>'}</ul>
+      <p class="hint">เรทเฉลี่ยกระเป๋านี้ ${sw.avgRate.toFixed(4)} บาท/เยน</p>
+    </div>
+    <div class="group">
+      <h3>ประวัติเติมเงิน</h3>
+      <ul class="list">${tops.map(t => `
+        <li><button data-top="${t.id}">
+          <span class="mid">${esc(pname(s, t.personId))}<small>${when(t.at)}${t.note ? ' · ' + esc(t.note) : ''}</small></span>
+          <span class="end">${yen(t.jpy)}<small>@${t.rate} · ${baht(t.jpy * t.rate)}</small></span>
+        </button></li>`).join('') || '<li class="empty">ยังไม่มี</li>'}</ul>
+      <p class="hint">แตะรายการเพื่อแก้ไขหรือลบ</p>
+    </div>
+    <div class="group">
+      <h3>เช็กยอดกับของจริง</h3>
+      <p class="hint">${w.kind === 'card' ? 'เปิดแอป YouTrip ดูยอดเงินเยนที่เหลือ' : 'นับเงินสดในกระเป๋า'} แล้วกรอกตัวเลขจริง ถ้าไม่ตรง แอปจะสร้างรายการ "ปรับยอด" หารทุกคนให้ ยอดในแอปจะตรงกับของจริง</p>
+      <div class="row2" style="margin-top:10px"><input id="wsReal" class="amount" inputmode="numeric" placeholder="¥ ยอดจริง" aria-label="ยอดจริง"><button class="btn-line" id="wsRec">ปรับยอด</button></div>
+      <div class="thb" id="wsRecPrev" style="margin-top:6px"></div>
+    </div>
+    <div class="group">
+      <h3>ตั้งค่ากระเป๋า</h3>
+      <label class="f" for="wsName">ชื่อ</label><input id="wsName" maxlength="20" value="${esc(w.name)}">
+      <label class="f">${w.kind === 'card' ? 'บัตรเป็นของใคร' : 'ใครถือเงินก้อนนี้'}</label>
+      ${seg('wsHolder', ppl.map(p => ({ v: p.id, label: p.name })), w.holderId)}
+      <p class="hint">ตอนจบทริป เงินที่เหลือในกระเป๋านี้นับว่าอยู่กับคนนี้</p>
+      <label class="f" for="wsLow">เตือนเมื่อเหลือต่ำกว่า (%)</label><input id="wsLow" inputmode="numeric" value="${w.lowPct}">
+      <div class="actions"><button class="btn-line" id="wsSave">บันทึกการตั้งค่า</button><button class="btn-line" data-close>ปิด</button></div>
+    </div>`);
+  $('#wsTop').onclick = () => topupSheet(null, id);
+  $('#sheetBody').oninput = (ev) => {
+    if (ev.target.id !== 'wsReal') return;
+    const v = parseJpy($('#wsReal').value), o = $('#wsRecPrev');
+    if (v === null) o.textContent = '';
+    else if (isNaN(v)) o.innerHTML = '<span class="warn">ใส่เป็นตัวเลขจำนวนเต็ม</span>';
+    else { const d = sw.balanceJpy - v; o.textContent = d === 0 ? 'ตรงกันพอดี ✓' : d > 0 ? `ในแอปมากกว่าของจริง ${yen(d)} → จะบันทึกเป็นรายจ่ายที่ไม่ได้จด` : `ของจริงมากกว่าในแอป ${yen(-d)} → จะบันทึกเป็นยอดคืนเข้ากระเป๋า`; }
+  };
+  $('#wsRec').onclick = () => {
+    const v = parseJpy($('#wsReal').value);
+    if (v === null || isNaN(v)) return toast('ใส่ยอดจริงเป็นตัวเลขจำนวนเต็ม', true);
+    let r; if (safe(() => { r = store.reconcile(id, v, (w.kind === 'card' ? 'เช็กกับแอป YouTrip' : 'นับเงินสด')); })) {
+      closeSheet(); toast(r ? `ปรับยอด ${yen(r.amount)} แล้ว ยอด${w.name}ตรงกับของจริง` : 'ยอดตรงกันแล้ว ไม่ต้องปรับ'); render();
+    }
+  };
+  $$('#sheetBody [data-top]').forEach(b => { b.onclick = () => topupSheet(b.dataset.top); });
+  $('#wsSave').onclick = () => {
+    const low = parseJpy($('#wsLow').value);
+    if (low === null || isNaN(low) || low > 100) return toast('เปอร์เซ็นต์ต้องเป็น 0–100', true);
+    safe(() => store.setWallet(id, { name: $('#wsName').value, holderId: segVal('wsHolder'), lowPct: low })) && (closeSheet(), toast('บันทึกแล้ว'), render());
+  };
+}
+
+// ================= เติมเงิน / แก้ไข =================
+function topupSheet(id, walletId) {
+  const s = store.get(), t = id ? s.topups.find(x => x.id === id) : null;
+  const ws = activeWallets(s), ppl = activePeople(s);
+  const wid = t ? t.walletId : (ws.some(w => w.id === walletId) ? walletId : ws[0].id);
+  openSheet(`
+    <h2>${t ? 'แก้ไขการเติมเงิน' : 'เติมเงิน'}</h2>
+    <label class="f">เข้ากระเป๋า</label>${seg('tWallet', ws.map(w => ({ v: w.id, label: w.name })), wid)}
+    <label class="f">ใครลงเงิน</label>${seg('tWho', ppl.map(p => ({ v: p.id, label: p.name })), t ? t.personId : ppl[0].id)}
+    <div class="row2">
+      <div><label class="f" for="tJpy">จำนวน (เยน)</label><input id="tJpy" class="amount" inputmode="numeric" placeholder="¥ 0" value="${t ? t.jpy : ''}"></div>
+      <div><label class="f" for="tRate">เรท</label><input id="tRate" inputmode="decimal" value="${t ? t.rate : s.settings.defaultRate}"></div>
+    </div>
+    <div class="thb" id="tPrev" style="margin-top:6px"></div>
+    <label class="f" for="tNote">โน้ต</label><input id="tNote" maxlength="100" placeholder="ไม่ใส่ก็ได้" value="${t ? esc(t.note) : ''}">
+    <div class="actions">
+      <button class="btn-main" id="tSave">${t ? 'บันทึกการแก้ไข' : 'เติมเงิน'}</button>
+      ${t ? '<button class="btn-danger" id="tDel">ลบรายการนี้</button>' : ''}
+      <button class="btn-line" data-close>ยกเลิก</button>
+    </div>`);
+  const prev = () => {
+    const j = parseJpy($('#tJpy').value), r = parseRate($('#tRate').value), o = $('#tPrev');
+    if (isNaN(j)) o.innerHTML = '<span class="warn">ใส่เป็นตัวเลขจำนวนเต็ม</span>';
+    else if (rateOdd(r)) o.innerHTML = `<span class="warn">เรท ${esc($('#tRate').value)} ดูผิดปกติ ปกติราว 0.2 กว่า</span>`;
+    else o.textContent = j ? `≈ ${baht(j * r)}` : '';
+  };
+  $('#sheetBody').oninput = prev; prev();
+  if (!t) setTimeout(() => $('#tJpy') && $('#tJpy').focus(), 280);
+
+  $('#tSave').onclick = () => {
+    const jpy = parseJpy($('#tJpy').value), rate = parseRate($('#tRate').value);
+    if (!jpy) return toast('ใส่จำนวนเยนเป็นตัวเลขจำนวนเต็ม', true);
+    if (!(rate > 0 && rate < 10)) return toast('เรทไม่ถูกต้อง เช่น 0.23', true);
+    const data = { walletId: segVal('tWallet'), personId: segVal('tWho'), jpy, rate, note: $('#tNote').value };
+    safe(() => { if (t) store.updateTopup(t.id, data); else store.addTopup(data); })
+      && (closeSheet(), toast(t ? 'บันทึกการแก้ไขแล้ว' : `เติม ${yen(jpy)} แล้ว`), render());
+  };
+  if (t) $('#tDel').onclick = () => {
+    if (store.get().topups.length === 1) return toast('ต้องมีการเติมเงินอย่างน้อย 1 รายการ', true);
+    if (!confirm(`ลบการเติมเงิน ${yen(t.jpy)} ของ${pname(s, t.personId)}?`)) return;
+    safe(() => store.deleteTopup(t.id)) && (closeSheet(), toast('ลบแล้ว'), render());
+  };
+}
+
+// ================= ตั้งค่า =================
+function settingsSheet() {
+  const s = store.get();
+  openSheet(`
+    <h2>ตั้งค่า</h2>
+    <div class="group">
+      <h3>ทริป</h3>
+      <label class="f" for="sName">ชื่อทริป</label><input id="sName" maxlength="40" value="${esc(s.trip.name)}">
+      <div class="row2" style="grid-template-columns:1fr 1fr">
+        <div><label class="f" for="sStart">วันไป</label><input id="sStart" type="date" value="${s.trip.start}"></div>
+        <div><label class="f" for="sEnd">วันกลับ</label><input id="sEnd" type="date" value="${s.trip.end}"></div>
+      </div>
+      <div class="actions"><button class="btn-line" id="sTripSave">บันทึกทริป</button></div>
+    </div>
+    <div class="group">
+      <h3>คนในทริป</h3>
+      <p class="hint">ปิดคนที่มีรายการแล้วไม่ได้ เพื่อไม่ให้ยอดหาย</p>
+      ${s.people.map(p => `
+        <div class="person ${p.active ? '' : 'off'}" data-pid="${p.id}">
+          <label class="sw"><input type="checkbox" data-on ${p.active ? 'checked' : ''} aria-label="เปิดใช้คนที่ ${p.id.slice(1)}"><span></span></label>
+          <input data-name maxlength="20" placeholder="คนที่ ${p.id.slice(1)}" value="${/^คนที่ \d$/.test(p.name) ? '' : esc(p.name)}">
+        </div>`).join('')}
+      <div class="actions"><button class="btn-line" id="sPplSave">บันทึกรายชื่อ</button></div>
+    </div>
+    <div class="group">
+      <h3>กระเป๋าเงิน</h3>
+      <p class="hint">แตะการ์ดเพื่อแก้ชื่อหรือคนถือ</p>
+      <div style="display:grid;gap:10px;margin-top:12px">${activeWallets(s).map(w => walletCard(w, null, s, true)).join('')}</div>
+      ${s.wallets.length < 4 ? `
+        <label class="f" for="nwName">เพิ่มกระเป๋าใหม่</label>
+        <input id="nwName" maxlength="20" placeholder="เช่น เงินสดแฟน, บัตรเครดิต">
+        <div style="margin-top:10px">${seg('nwKind', [{ v: 'cash', label: 'เงินสด' }, { v: 'card', label: 'บัตร' }], 'cash')}</div>
+        <div class="actions"><button class="btn-line" id="nwAdd">เพิ่มกระเป๋า</button></div>` : '<p class="hint">ครบ 4 กระเป๋าแล้ว</p>'}
+    </div>
+    <div class="group">
+      <h3>ส่งออกและสำรองข้อมูล</h3>
+      <p class="hint">ส่งสรุปเข้า LINE, ไฟล์ Excel (CSV), ไฟล์สำรอง และกู้คืนจากไฟล์สำรอง</p>
+      <div class="actions"><button class="btn-line" id="sExport">เปิดเมนูส่งออก</button></div>
+    </div>
+    <div class="group">
+      <h3>เริ่มทริปใหม่</h3>
+      <p class="hint">ลบข้อมูลทั้งหมดในเครื่องนี้ แล้วกลับไปหน้าตั้งค่าครั้งแรก ระบบจะให้บันทึกไฟล์สำรองก่อน</p>
+      <div class="actions"><button class="btn-danger" id="sReset">ลบข้อมูลทั้งหมด</button><button class="btn-line" data-close>ปิด</button></div>
+    </div>
+    <p class="later" style="margin-top:20px">Trip Wallet เวอร์ชัน ${APP_VERSION}${isStandalone() ? ' · เปิดจากไอคอนหน้าโฮม' : ''}</p>`);
+
+  $('#sheetBody').oninput = (e) => {
+    const row = e.target.closest('.person');
+    if (row && e.target.matches('[data-on]')) row.classList.toggle('off', !e.target.checked);
+  };
+  $$('#sheetBody [data-wallet]').forEach(b => { b.onclick = () => walletSheet(b.dataset.wallet); });
+  $('#sTripSave').onclick = () => safe(() => store.setTrip({ name: $('#sName').value, start: $('#sStart').value, end: $('#sEnd').value })) && (toast('บันทึกทริปแล้ว'), render());
+  $('#sPplSave').onclick = () => {
+    const rows = $$('#sheetBody .person').map(r => ({ id: r.dataset.pid, on: r.querySelector('[data-on]').checked, name: r.querySelector('[data-name]').value }));
+    // เปิด/เปลี่ยนชื่อก่อน แล้วค่อยปิด จะได้ไม่ติดเงื่อนไขต้องมีอย่างน้อย 1 คน
+    const ok = safe(() => {
+      rows.filter(r => r.on).forEach(r => store.setPerson(r.id, { name: r.name, active: true }));
+      rows.filter(r => !r.on).forEach(r => { if (store.get().people.find(p => p.id === r.id).active) store.setPerson(r.id, { active: false }); });
+    });
+    render(); settingsSheet(); if (ok) toast('บันทึกรายชื่อแล้ว');
+  };
+  if ($('#nwAdd')) $('#nwAdd').onclick = () => {
+    const name = $('#nwName').value.trim();
+    if (!name) return toast('ตั้งชื่อกระเป๋าก่อน', true);
+    safe(() => store.addWallet({ name, kind: segVal('nwKind'), holderId: activePeople(store.get())[0].id })) && (render(), settingsSheet(), toast('เพิ่ม' + name + 'แล้ว'));
+  };
+  $('#sExport').onclick = () => exportSheet();
+  $('#sReset').onclick = resetSheet;
+}
+
+// ================= ประวัติ =================
+const ymdLocal = (iso) => { const d = new Date(iso); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const hf = { day: '', person: '', cat: '', wallet: '' };
+function dayLabel(s, ymd) {
+  const lab = new Date(ymd + 'T00:00:00').toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (s.trip.start && ymd >= s.trip.start && (!s.trip.end || ymd <= s.trip.end)) return `วันที่ ${Math.round((Date.parse(ymd) - Date.parse(s.trip.start)) / 864e5) + 1} · ${lab}`;
+  return lab;
+}
+function renderHistory(s) {
+  $('#app').oninput = null;
+  const all = s.expenses.slice().sort((a, b) => b.at.localeCompare(a.at));
+  const days = [...new Set(all.map(e => ymdLocal(e.at)))];
+  const ppl = activePeople(s), ws = activeWallets(s);
+  const usedCats = [...new Set(all.map(e => e.category))];
+  const opt = (v, label, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${esc(label)}</option>`;
+  const list = all.filter(e => (!hf.day || ymdLocal(e.at) === hf.day) && (!hf.person || e.owners.includes(hf.person)) && (!hf.cat || e.category === hf.cat) && (!hf.wallet || e.walletId === hf.wallet));
+  const total = list.reduce((a, e) => a + e.amount, 0);
+  const share = hf.person ? list.reduce((a, e) => a + TW.shareOf(e, hf.person), 0) : null;
+  const groups = {};
+  list.forEach(e => { (groups[ymdLocal(e.at)] = groups[ymdLocal(e.at)] || []).push(e); });
+  const any = hf.day || hf.person || hf.cat || hf.wallet;
+
+  $('#app').innerHTML = `
+    <div class="bar"><div><h1>ประวัติรายจ่าย</h1><div class="sub">${all.length} รายการ</div></div></div>
+    <div class="filters">
+      <select id="fDay" aria-label="กรองตามวัน">${opt('', 'ทุกวัน', hf.day)}${days.map(d => opt(d, dayLabel(s, d), hf.day)).join('')}</select>
+      <select id="fPerson" aria-label="กรองตามคน">${opt('', 'ทุกคน', hf.person)}${ppl.map(p => opt(p.id, p.name, hf.person)).join('')}</select>
+      <select id="fCat" aria-label="กรองตามหมวด">${opt('', 'ทุกหมวด', hf.cat)}${usedCats.map(c => opt(c, (CAT_ICON[c] || '⚖️') + ' ' + TW.CATEGORIES[c], hf.cat)).join('')}</select>
+      <select id="fWallet" aria-label="กรองตามกระเป๋า">${opt('', 'ทุกกระเป๋า', hf.wallet)}${ws.map(w => opt(w.id, w.name, hf.wallet)).join('')}</select>
+    </div>
+    <div class="hsum">
+      <span>${list.length} รายการ${any ? ' ที่ตรงเงื่อนไข' : ''}</span>
+      <b class="num">${yen(total)}</b>
+      ${share !== null ? `<small>ส่วนของ${esc(pname(s, hf.person))} <b class="num">${yen(share)}</b> (หักส่วนที่หารกับคนอื่นแล้ว)</small>` : ''}
+      ${any ? '<button class="linkbtn" id="fClear">ล้างตัวกรอง</button>' : ''}
+    </div>
+    ${list.length ? Object.keys(groups).map(d => `
+      <h2 class="day"><span>${esc(dayLabel(s, d))}</span><span class="num">${yen(groups[d].reduce((a, e) => a + e.amount, 0))}</span></h2>
+      <ul class="list">${groups[d].map(e => expRow(s, e)).join('')}</ul>`).join('')
+      : `<p class="empty">${all.length ? 'ไม่มีรายการที่ตรงกับตัวกรอง' : 'ยังไม่มีรายจ่าย กดปุ่ม + ตรงกลางด้านล่างเพื่อเริ่ม'}</p>`}`;
+
+  [['fDay', 'day'], ['fPerson', 'person'], ['fCat', 'cat'], ['fWallet', 'wallet']].forEach(([id, k]) => { $('#' + id).onchange = (ev) => { hf[k] = ev.target.value; render(); }; });
+  if ($('#fClear')) $('#fClear').onclick = () => { Object.keys(hf).forEach(k => { hf[k] = ''; }); render(); };
+  $$('[data-exp]').forEach(b => { b.onclick = () => expenseSheet(b.dataset.exp); });
+}
+
+// ================= คืนภาษี =================
+const CHECK_KEY = 'tripwallet_v2_check'; // เช็กลิสต์ "ของครบ" เป็นข้อมูลช่วยจำ ไม่กระทบยอดเงิน
+function loadChecks() { try { return JSON.parse(localStorage.getItem(CHECK_KEY)) || {}; } catch (_) { return {}; } }
+function saveChecks(c) { try { localStorage.setItem(CHECK_KEY, JSON.stringify(c)); } catch (_) {} }
+
+function renderTax(s) {
+  $('#app').oninput = null;
+  const sm = store.summary(), checks = loadChecks();
+  const items = s.expenses.filter(e => e.tax).sort((a, b) => a.at.localeCompare(b.at));
+  const pend = items.filter(e => e.tax.refund.status === 'pending');
+  const got = items.filter(e => e.tax.refund.status === 'received');
+  const rej = items.filter(e => e.tax.refund.status === 'rejected');
+  const rateOf = (e) => sm.wallets[e.walletId] ? sm.wallets[e.walletId].avgRate : s.settings.defaultRate;
+  const pendThb = pend.reduce((a, e) => a + e.tax.tax * rateOf(e), 0);
+  const ready = pend.filter(e => checks[e.id]).length;
+  const who = (e) => e.owners.length === activePeople(s).length && e.owners.length > 1 ? 'หารทุกคน' : e.owners.map(id => pname(s, id)).join(', ');
+  const base = (e) => e.tax.preTax !== null ? e.tax.preTax : e.amount - e.tax.tax;
+
+  const pendCard = (e) => `
+    <li class="rcpt ${checks[e.id] ? 'ready' : ''}">
+      <label class="rc-check"><input type="checkbox" data-check="${e.id}" ${checks[e.id] ? 'checked' : ''}><span>ของครบ</span></label>
+      <div class="rc-main">
+        <b>${esc(e.store || e.note || 'ไม่ได้ใส่ชื่อร้าน')}</b>
+        <small>${when(e.at)} · ${esc(who(e))}${e.note && e.store ? ' · ' + esc(e.note) : ''}</small>
+        <div class="rc-nums"><span>จ่าย <b class="num">${yen(e.amount)}</b></span><span>ภาษี <b class="num">${yen(e.tax.tax)}</b>${e.tax.preTax === null && !e.tax.manual ? ' (ประมาณ)' : ''}</span></div>
+        ${base(e) < TW.TAXFREE_MIN ? `<p class="warn">⚠ ยอดก่อน VAT ${yen(base(e))} ไม่ถึง ¥5,000 อาจขอคืนไม่ได้</p>` : ''}
+        <div class="rc-btns"><button class="btn-add" data-got="${e.id}">ได้เงินคืนแล้ว</button><button class="btn-line sm" data-rej="${e.id}">ไม่ได้คืน</button><button class="btn-line sm" data-exp="${e.id}">แก้ไข</button></div>
+      </div>
+    </li>`;
+  const doneRow = (e, txt) => `<li><button data-undo="${e.id}"><span class="mid">${esc(e.store || e.note || 'ไม่ได้ใส่ชื่อร้าน')}<small>${when(e.at)} · ${esc(who(e))}</small></span><span class="end">${txt}</span></button></li>`;
+
+  $('#app').innerHTML = `
+    <div class="bar"><div><h1>คืนภาษี</h1><div class="sub">${items.length} ใบเสร็จ Tax-free</div></div></div>
+    <div class="taxsum">
+      <div><span>รอคืน ${pend.length} ใบ</span><b class="num">${yen(pend.reduce((a, e) => a + e.tax.tax, 0))}</b><small class="num">≈ ${baht(pendThb)} สูงสุด</small></div>
+      <div><span>ได้คืนแล้ว ${got.length} ใบ</span><b class="num gold">${baht(sm.tax.receivedThb)}</b><small>เข้ากระเป๋าบาท</small></div>
+    </div>
+    ${items.length ? '' : '<p class="empty">ยังไม่มีใบเสร็จที่ขอคืนภาษี ตอนบันทึกรายจ่าย ให้เปิดสวิตช์ "ขอคืนภาษี"</p>'}
+    ${pend.length ? `
+      <h2 class="sec">ต้องพกไปสนามบิน <span class="num" style="font-size:15px;color:var(--mut)">ครบ ${ready}/${pend.length}</span></h2>
+      <div class="tips">
+        <p>ศุลกากรตรวจทีละใบเสร็จ ถ้าของในใบไหนขาดไปชิ้นเดียว ใบนั้นอาจไม่ได้คืนทั้งใบ</p>
+        <p>อาหาร ขนม เครื่องสำอาง ที่แกะใช้ไปแล้วในญี่ปุ่น ขอคืนไม่ได้</p>
+        <p>ไปทำเรื่องที่ตู้หรือเคาน์เตอร์ศุลกากรก่อนเช็กอินกระเป๋า และขอคืนได้เฉพาะของที่ซื้อมาไม่เกิน 90 วัน</p>
+      </div>
+      <ul class="rlist">${pend.map(pendCard).join('')}</ul>` : ''}
+    ${got.length ? `<h2 class="sec">ได้คืนแล้ว</h2><ul class="list">${got.map(e => doneRow(e, `<b class="gold">${baht(e.tax.refund.thb)}</b><small>${esc(pname(s, e.tax.refund.receiverId))} รับ</small>`)).join('')}</ul>` : ''}
+    ${rej.length ? `<h2 class="sec">ไม่ได้คืน</h2><ul class="list">${rej.map(e => doneRow(e, `<span class="mut">ภาษี ${yen(e.tax.tax)}</span><small>แตะเพื่อเปลี่ยน</small>`)).join('')}</ul>` : ''}`;
+
+  $$('[data-check]').forEach(c => { c.onchange = () => { const k = loadChecks(); if (c.checked) k[c.dataset.check] = 1; else delete k[c.dataset.check]; saveChecks(k); render(); }; });
+  $$('[data-got]').forEach(b => { b.onclick = () => refundSheet(b.dataset.got); });
+  $$('[data-rej]').forEach(b => { b.onclick = () => {
+    const e = s.expenses.find(x => x.id === b.dataset.rej);
+    if (!confirm(`บันทึกว่าใบ ${e.store || e.note || ''} ไม่ได้เงินคืน?`)) return;
+    safe(() => store.setRefund(e.id, { status: 'rejected' })) && (toast('บันทึกว่าไม่ได้คืนแล้ว'), render());
+  }; });
+  $$('[data-exp]').forEach(b => { b.onclick = () => expenseSheet(b.dataset.exp); });
+  $$('[data-undo]').forEach(b => { b.onclick = () => refundSheet(b.dataset.undo); });
+}
+
+function refundSheet(id) {
+  const s = store.get(), sm = store.summary(), e = s.expenses.find(x => x.id === id), r = e.tax.refund;
+  const est = e.tax.tax * (sm.wallets[e.walletId] ? sm.wallets[e.walletId].avgRate : s.settings.defaultRate);
+  const ppl = activePeople(s);
+  openSheet(`
+    <h2>เงินคืนภาษี</h2>
+    <p class="hint">${esc(e.store || e.note || 'ไม่ได้ใส่ชื่อร้าน')} · ภาษี ${yen(e.tax.tax)} ≈ ${baht(est)}</p>
+    <label class="f" for="rThb">ได้คืนจริงกี่บาท</label>
+    <div class="amt-wrap"><span>฿</span><input id="rThb" class="amt" inputmode="decimal" placeholder="0" value="${r.status === 'received' ? r.thb : ''}"></div>
+    <p class="hint">ดูยอดในแอป YouTrip หรือสลิปคืนเงิน ร้านหรือบริษัทที่ทำเรื่องคืนเงินอาจหักค่าธรรมเนียม ยอดจริงจึงมักน้อยกว่าภาษีที่จ่าย</p>
+    <label class="f">ใครเป็นคนรับเงิน</label>
+    ${seg('rWho', ppl.map(p => ({ v: p.id, label: p.name })), ppl.some(p => p.id === r.receiverId) ? r.receiverId : ppl[0].id)}
+    <p class="hint">เงินคืนเป็นของคนที่ซื้อของ (${e.owners.map(o => esc(pname(s, o))).join(', ')}) ถ้าคนรับไม่ใช่คนซื้อ ยอดเคลียร์จะคิดให้เอง</p>
+    <div class="actions">
+      <button class="btn-main" id="rSave">บันทึกว่าได้คืนแล้ว</button>
+      ${r.status !== 'pending' ? '<button class="btn-line" id="rPend">เปลี่ยนกลับเป็นรอคืน</button>' : ''}
+      ${r.status !== 'rejected' ? '<button class="btn-line" id="rRej">ไม่ได้คืน</button>' : ''}
+      <button class="btn-line" data-close>ยกเลิก</button>
+    </div>`);
+  if (r.status !== 'received') setTimeout(() => $('#rThb') && $('#rThb').focus(), 280);
+  $('#rSave').onclick = () => {
+    const thb = Number(String($('#rThb').value).replace(/[,\s฿]/g, ''));
+    if (!(thb > 0)) return toast('ใส่ยอดเงินบาทที่ได้คืน', true);
+    safe(() => store.setRefund(e.id, { status: 'received', thb, receiverId: segVal('rWho') })) && (closeSheet(), toast(`บันทึกเงินคืน ${baht(thb)} แล้ว`), render());
+  };
+  if ($('#rPend')) $('#rPend').onclick = () => safe(() => store.setRefund(e.id, { status: 'pending' })) && (closeSheet(), toast('เปลี่ยนเป็นรอคืนแล้ว'), render());
+  if ($('#rRej')) $('#rRej').onclick = () => safe(() => store.setRefund(e.id, { status: 'rejected' })) && (closeSheet(), toast('บันทึกว่าไม่ได้คืนแล้ว'), render());
+}
+
+// ================= ส่งออก / สำรอง / กู้คืน =================
+const isPhone = () => window.matchMedia && matchMedia('(pointer: coarse)').matches;
+const stamp = () => { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '-' + z(d.getHours()) + z(d.getMinutes()); };
+const hm = (iso) => new Date(iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+function summaryText(full) {
+  const s = store.get(), sm = store.summary(), T = s.trip, d = sm.daily;
+  const ws = activeWallets(s), ppl = activePeople(s);
+  const L = [];
+  L.push(`🇯🇵 ${T.name}`);
+  const now = new Date().toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const during = d && T.start && sm.today >= T.start && sm.today <= T.end;
+  L.push(`สรุป ณ ${now}${during ? ` (วันที่ ${d.dayNo}/${d.totalDays})` : ''}`);
+  L.push('');
+  L.push(`💰 เงินเหลือ ${yen(sm.totalBalanceJpy)} (≈${baht(sm.totalBalanceThb)})`);
+  ws.forEach(w => { const x = sm.wallets[w.id]; L.push(`• ${w.name} ${yen(x.balanceJpy)} จาก ${yen(x.topupJpy)} (${pname(s, w.holderId)}ถือ)`); });
+  L.push('');
+  L.push(`🧾 ใช้ไปแล้ว ${yen(sm.totalSpentJpy)}${during ? ` · วันนี้ ${yen(d.todaySpent)}` : ''}`);
+  ppl.forEach(p => { const x = sm.people[p.id]; L.push(`• ${p.name} ${yen(x.spentJpy)} (≈${baht(x.netSpentThb)})`); });
+  if (sm.tax.pendingCount || sm.tax.receivedCount || sm.tax.rejectedCount) {
+    L.push('');
+    L.push(`🛍️ คืนภาษี: รอ ${sm.tax.pendingCount} ใบ ~${yen(sm.tax.pendingJpy)} · ได้แล้ว ${baht(sm.tax.receivedThb)}`);
+  }
+  if (ppl.length > 1) {
+    L.push('');
+    L.push('🤝 ถ้าจบทริปตอนนี้');
+    if (sm.transfers.length) sm.transfers.forEach(t => L.push(`• ${pname(s, t.from)} โอนให้ ${pname(s, t.to)} ${baht(t.thb)}`));
+    else L.push('• ยังไม่มีใครค้างใคร');
+  }
+  if (full) {
+    const all = s.expenses.slice().sort((a, b) => a.at.localeCompare(b.at));
+    const groups = {};
+    all.forEach(e => { (groups[ymdLocal(e.at)] = groups[ymdLocal(e.at)] || []).push(e); });
+    L.push(''); L.push(`📋 รายจ่ายทั้งหมด ${all.length} รายการ`);
+    Object.keys(groups).forEach(day => {
+      L.push(''); L.push(`— ${dayLabel(s, day)} (${yen(groups[day].reduce((a, e) => a + e.amount, 0))}) —`);
+      groups[day].forEach(e => {
+        const w = s.wallets.find(x => x.id === e.walletId);
+        const who = e.owners.length === ppl.length && e.owners.length > 1 ? 'หาร' : e.owners.map(o => pname(s, o)).join('+');
+        const name = e.note || e.store || TW.CATEGORIES[e.category];
+        L.push(`${hm(e.at)} ${name} ${yen(e.amount)} [${w.name}·${who}]${e.tax ? ' 🛍️' : ''}`);
+      });
+    });
+    L.push(''); L.push('💳 เติมเงิน');
+    s.topups.slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(t => {
+      const w = s.wallets.find(x => x.id === t.walletId);
+      L.push(`• ${pname(s, t.personId)} → ${w.name} ${yen(t.jpy)} @${t.rate} = ${baht(t.jpy * t.rate)}`);
+    });
+  }
+  return L.join('\n');
+}
+
+function csvText() {
+  const s = store.get(), ppl = activePeople(s);
+  const q = (v) => { const x = String(v == null ? '' : v); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+  const st = { pending: 'รอคืน', received: 'ได้คืนแล้ว', rejected: 'ไม่ได้คืน' };
+  const head = ['ประเภท', 'วันที่', 'เวลา', 'หมวด', 'รายการ', 'ร้าน', 'ยอด (เยน)', 'กระเป๋า', 'ของใคร', ...ppl.map(p => 'ส่วนของ ' + p.name + ' (เยน)'), 'เรท (บาท/เยน)', 'อัตราภาษี %', 'ยอดก่อน VAT', 'ภาษี', 'สถานะคืนภาษี', 'ได้คืน (บาท)'];
+  const rows = [head];
+  s.expenses.slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(e => {
+    const w = s.wallets.find(x => x.id === e.walletId), t = e.tax;
+    rows.push(['รายจ่าย', ymdLocal(e.at), hm(e.at), TW.CATEGORIES[e.category], e.note, e.store, e.amount, w.name, e.owners.map(o => pname(s, o)).join(' + '),
+      ...ppl.map(p => TW.shareOf(e, p.id)), '', t ? t.rate : '', t && t.preTax !== null ? t.preTax : '', t ? t.tax : '', t ? st[t.refund.status] : '', t && t.refund.status === 'received' ? t.refund.thb : '']);
+  });
+  s.topups.slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(t => {
+    const w = s.wallets.find(x => x.id === t.walletId);
+    rows.push(['เติมเงิน', ymdLocal(t.at), hm(t.at), '', t.note, '', t.jpy, w.name, pname(s, t.personId), ...ppl.map(() => ''), t.rate, '', '', '', '', '']);
+  });
+  return '﻿' + rows.map(r => r.map(q).join(',')).join('\r\n'); // BOM ให้ Excel อ่านภาษาไทยถูก
+}
+
+// มือถือ → เมนูแชร์ของ iPhone / คอม → ดาวน์โหลดลงเครื่อง
+async function sendFile(name, text, mime) {
+  const file = new File([text], name, { type: mime });
+  if (isPhone() && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return true; }
+    catch (e) { if (e.name === 'AbortError') return false; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  toast('บันทึกไฟล์ ' + name + ' แล้ว');
+  return true;
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); toast('คัดลอกแล้ว เปิด LINE แล้วกดวาง'); return; } catch (_) {}
+  const ta = $('#xText'); if (ta) { ta.focus(); ta.select(); try { document.execCommand('copy'); toast('คัดลอกแล้ว เปิด LINE แล้วกดวาง'); return; } catch (_) {} }
+  toast('คัดลอกอัตโนมัติไม่ได้ ให้กดค้างที่ข้อความแล้วเลือกคัดลอก', true);
+}
+
+function exportSheet() {
+  let full = false;
+  openSheet(`
+    <h2>ส่งออกและสำรองข้อมูล</h2>
+    <div class="group" style="border-top:0;margin-top:8px">
+      <h3>ส่งสรุปเข้า LINE</h3>
+      <div style="margin-top:10px">${seg('xKind', [{ v: 'short', label: 'สรุปสั้น' }, { v: 'full', label: 'ทุกรายการ' }], 'short')}</div>
+      <textarea id="xText" readonly rows="9" aria-label="ข้อความที่จะส่ง"></textarea>
+      <p class="hint" id="xLen"></p>
+      <div class="actions">
+        ${navigator.share ? '<button class="btn-main" id="xShare">แชร์ → เลือก LINE</button>' : ''}
+        <button class="${navigator.share ? 'btn-line' : 'btn-main'}" id="xCopy">คัดลอกข้อความ</button>
+      </div>
+      <p class="hint">แนะนำส่งสรุปสั้นเข้าแชทกับเพื่อนร่วมทริปทุกคืน และส่ง "ทุกรายการ" เข้า Keep Memo ของตัวเองเป็นสำรอง</p>
+    </div>
+    <div class="group">
+      <h3>ไฟล์ Excel (CSV)</h3>
+      <p class="hint">ทุกรายจ่ายและการเติมเงิน แยกส่วนของแต่ละคน เปิดใน Excel แล้วภาษาไทยไม่เพี้ยน</p>
+      <div class="actions"><button class="btn-line" id="xCsv">ส่งออกไฟล์ CSV</button></div>
+    </div>
+    <div class="group">
+      <h3>ไฟล์สำรอง</h3>
+      <p class="hint">เก็บข้อมูลทั้งหมดไว้ในไฟล์เดียว ใช้กู้คืนเมื่อเปลี่ยนเครื่อง หรือเผลอลบแอป ส่งเก็บไว้ใน LINE Keep หรือ iCloud ได้</p>
+      <div class="actions"><button class="btn-line" id="xBak">บันทึกไฟล์สำรอง</button><button class="btn-line" id="xRes">กู้คืนจากไฟล์สำรอง</button><button class="btn-line" data-close>ปิด</button></div>
+    </div>`);
+  const upd = () => {
+    full = segVal('xKind') === 'full';
+    const t = summaryText(full);
+    $('#xText').value = t;
+    $('#xLen').textContent = `${t.length.toLocaleString('en-US')} ตัวอักษร` + (t.length > 5000 ? ' · ข้อความยาวมาก ถ้า LINE ตัดข้อความ ให้ใช้ไฟล์ CSV แทน' : '');
+  };
+  $('#sheetBody').oninput = upd; upd();
+  if ($('#xShare')) $('#xShare').onclick = async () => {
+    try { await navigator.share({ text: $('#xText').value }); } catch (e) { if (e.name !== 'AbortError') copyText($('#xText').value); }
+  };
+  $('#xCopy').onclick = () => copyText($('#xText').value);
+  $('#xCsv').onclick = () => sendFile(`tripwallet-${stamp()}.csv`, csvText(), 'text/csv');
+  $('#xBak').onclick = () => sendFile(`tripwallet-backup-${stamp()}.json`, store.exportJson(), 'application/json');
+  $('#xRes').onclick = pickRestore;
+}
+
+function pickRestore() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json,application/json';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      let info = '';
+      try { const d = JSON.parse(r.result); info = `ทริป "${d.trip.name}" · รายจ่าย ${d.expenses.length} รายการ · เติมเงิน ${d.topups.length} รายการ`; }
+      catch (_) { return toast('ไฟล์นี้ไม่ใช่ไฟล์สำรองของแอปนี้', true); }
+      if (!confirm(`กู้คืนจากไฟล์นี้?\n${info}\n\nข้อมูลที่อยู่ในเครื่องตอนนี้จะถูกแทนที่ทั้งหมด`)) return;
+      safe(() => store.importJson(r.result)) && (wiz = null, closeSheet(), view = 'home', render(), toast('กู้คืนแล้ว'));
+    };
+    r.onerror = () => toast('อ่านไฟล์ไม่ได้', true);
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function resetSheet() {
+  openSheet(`
+    <h2>เริ่มทริปใหม่</h2>
+    <p class="hint">ข้อมูลทั้งหมดในเครื่องนี้จะถูกลบ กู้คืนได้เฉพาะจากไฟล์สำรองเท่านั้น</p>
+    <div class="actions">
+      <button class="btn-main" id="rsBak">1. บันทึกไฟล์สำรองก่อน</button>
+      <button class="btn-danger" id="rsGo">2. ลบข้อมูลทั้งหมด</button>
+      <button class="btn-line" data-close>ยกเลิก</button>
+    </div>`);
+  $('#rsBak').onclick = () => sendFile(`tripwallet-backup-${stamp()}.json`, store.exportJson(), 'application/json');
+  $('#rsGo').onclick = () => {
+    if (!confirm('ลบข้อมูลทั้งหมดในเครื่องนี้แน่นอน?')) return;
+    if (safe(() => store.reset())) { try { localStorage.removeItem(CHECK_KEY); } catch (_) {} wiz = null; view = 'home'; closeSheet(); render(); toast('ล้างข้อมูลแล้ว'); }
+  };
+}
+
+// ================= บันทึกรายจ่าย / แก้ไข =================
+const toLocalInput = (iso) => { const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+
+function expenseSheet(id) {
+  const s = store.get(), sm = store.summary(), e = id ? s.expenses.find(x => x.id === id) : null;
+  if (e && e.category === 'adjust') {
+    if (confirm(`รายการปรับยอด ${yen(e.amount)} แก้ไม่ได้ ต้องการลบไหม? (ลบแล้วยอดจะกลับเป็นเหมือนก่อนปรับ)`)) safe(() => store.deleteExpense(e.id)) && (toast('ลบแล้ว'), render());
+    return;
+  }
+  const ws = activeWallets(s), ppl = activePeople(s);
+  const wid = e ? e.walletId : (ws.some(w => w.id === s.settings.lastWalletId) ? s.settings.lastWalletId : ws[0].id);
+  const owners0 = e ? e.owners : s.settings.lastOwners.filter(o => ppl.some(p => p.id === o));
+  const mode0 = owners0.length === 1 ? owners0[0] : (owners0.length === ppl.length ? 'all' : 'custom');
+  const whoOpts = ppl.map(p => ({ v: p.id, label: p.name }));
+  if (ppl.length > 1) whoOpts.push({ v: 'all', label: ppl.length === 2 ? 'หารครึ่ง' : 'หารทุกคน' });
+  if (ppl.length > 2) whoOpts.push({ v: 'custom', label: 'เลือกคนหาร' });
+  const t = e && e.tax;
+  const cats = Object.keys(TW.CATEGORIES).filter(c => c !== 'adjust');
+
+  openSheet(`
+    <h2>${e ? 'แก้ไขรายจ่าย' : 'บันทึกรายจ่าย'}</h2>
+    <div class="amt-wrap"><span>¥</span><input id="eAmt" class="amt" inputmode="numeric" placeholder="0" value="${e ? e.amount : ''}" aria-label="จำนวนเงิน (เยน)"></div>
+    <div class="thb" id="eThb" style="margin-top:6px"></div>
+
+    <label class="f">จ่ายจาก</label>
+    ${seg('eWallet', ws.map(w => ({ v: w.id, label: (w.kind === 'card' ? '💳 ' : '💴 ') + w.name })), wid)}
+
+    <label class="f">ของใคร</label>
+    ${seg('eWho', whoOpts, mode0 === 'custom' && ppl.length <= 2 ? 'all' : mode0)}
+    <div class="chips" id="eCustom" ${mode0 === 'custom' ? '' : 'hidden'}>
+      ${ppl.map(p => `<label><input type="checkbox" value="${p.id}" ${owners0.includes(p.id) ? 'checked' : ''}>${esc(p.name)}</label>`).join('')}
+    </div>
+
+    <label class="f">หมวด</label>
+    <div class="cats" id="eCats">${cats.map(c => `<button type="button" data-cat="${c}" class="${e && e.category === c ? 'on' : ''}" aria-pressed="${!!(e && e.category === c)}"><i>${CAT_ICON[c]}</i>${esc(TW.CATEGORIES[c])}</button>`).join('')}</div>
+
+    <label class="f" for="eNote">โน้ต</label>
+    <input id="eNote" maxlength="100" placeholder="ไม่ใส่ก็ได้ เช่น ราเมง" value="${e ? esc(e.note) : ''}">
+
+    <div class="taxbox">
+      <div class="taxhead">
+        <div><b>ขอคืนภาษี (Tax-free)</b><small>จ่ายราคารวม VAT แล้วไปขอคืนที่สนามบิน</small></div>
+        <label class="sw"><input type="checkbox" id="eTaxOn" ${t ? 'checked' : ''} aria-label="ขอคืนภาษี"><span></span></label>
+      </div>
+      <div id="eTaxBody" ${t ? '' : 'hidden'}>
+        <label class="f" for="eStore">ร้าน</label><input id="eStore" maxlength="40" placeholder="เช่น Bic Camera ชินจูกุ" value="${e ? esc(e.store) : ''}">
+        <label class="f">อัตราภาษี</label>
+        ${seg('eRate', [{ v: '10', label: '10% ของทั่วไป' }, { v: '8', label: '8% อาหาร/ขนม' }], t ? String(t.rate) : '10')}
+        <div class="row2" style="grid-template-columns:1fr 1fr">
+          <div><label class="f" for="ePre">ยอดก่อน VAT (税抜)</label><input id="ePre" inputmode="numeric" placeholder="ไม่ใส่ก็ได้" value="${t && t.preTax ? t.preTax : ''}"></div>
+          <div><label class="f" for="eTax">ภาษี (消費税)</label><input id="eTax" inputmode="numeric" value="${t ? t.tax : ''}"></div>
+        </div>
+        <button type="button" class="linkbtn" id="eTaxAuto" ${t && t.manual ? '' : 'hidden'}>ให้แอปคำนวณภาษีให้</button>
+        <div class="taxres" id="eTaxRes"></div>
+      </div>
+    </div>
+
+    <details class="more" ${e ? 'open' : ''}><summary>วันเวลา: <span id="eWhenTxt" style="margin-left:6px">${e ? when(e.at) : 'ตอนนี้'}</span></summary>
+      <input type="datetime-local" id="eWhen" value="${toLocalInput(e ? e.at : new Date().toISOString())}">
+    </details>
+
+    <div class="actions">
+      <button class="btn-main" id="eSave">บันทึก</button>
+      ${e ? '<button class="btn-danger" id="eDel">ลบรายการนี้</button>' : ''}
+      <button class="btn-line" data-close>ยกเลิก</button>
+    </div>`);
+
+  let cat = e ? e.category : null;
+  let taxManual = !!(t && t.manual);
+  let whenTouched = !!e;
+  const box = $('#sheetBody');
+
+  $('#eCats').onclick = (ev) => {
+    const b = ev.target.closest('[data-cat]'); if (!b) return;
+    cat = b.dataset.cat;
+    $$('#eCats button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    upd();
+  };
+  $('#eTax').addEventListener('input', () => { taxManual = true; $('#eTaxAuto').hidden = false; });
+  $('#eTaxAuto').onclick = () => { taxManual = false; $('#eTaxAuto').hidden = true; upd(); };
+  $('#eWhen').addEventListener('input', () => { whenTouched = true; const v = $('#eWhen').value; $('#eWhenTxt').textContent = v ? when(new Date(v).toISOString()) : 'ตอนนี้'; });
+
+  function owners() {
+    const m = segVal('eWho');
+    if (m === 'all') return ppl.map(p => p.id);
+    if (m === 'custom') return $$('#eCustom input:checked').map(x => x.value);
+    return [m];
+  }
+  function taxInput(amount) {
+    const pre = parseJpy($('#ePre').value), tx = parseJpy($('#eTax').value);
+    return { rate: Number(segVal('eRate')), preTax: pre || null, manual: taxManual, tax: tx };
+  }
+
+  function upd() {
+    const amount = parseJpy($('#eAmt').value), w = sm.wallets[segVal('eWallet')];
+    $('#eThb').innerHTML = isNaN(amount) ? '<span class="warn">ใส่เป็นตัวเลขจำนวนเต็ม</span>' : amount ? `≈ ${baht(amount * w.avgRate)}` + (amount > w.balanceJpy ? ` <span class="warn">· เกินเงินที่เหลือใน${esc(w.name)} (${yen(w.balanceJpy)})</span>` : '') : '';
+    $('#eCustom').hidden = segVal('eWho') !== 'custom';
+    const on = $('#eTaxOn').checked;
+    $('#eTaxBody').hidden = !on;
+    if (on) {
+      const res = $('#eTaxRes');
+      if (!amount || isNaN(amount)) { res.innerHTML = '<span class="no">ใส่ยอดที่จ่ายก่อน</span>'; if (!taxManual) $('#eTax').value = ''; }
+      else {
+        try {
+          const r = TW.calcTax(amount, taxInput(amount));
+          if (!taxManual) $('#eTax').value = r.tax;
+          const base = r.preTax !== null ? r.preTax : amount - r.tax;
+          res.innerHTML = `คาดว่าได้คืนสูงสุด <b class="num">${yen(r.tax)}</b> ≈ ${baht(r.tax * w.avgRate)}${r.estimated ? ' (ประมาณจากอัตรา)' : ''}<br>` +
+            (r.eligible ? `<span class="ok">✓ ยอดก่อน VAT ${yen(base)} ถึงขั้นต่ำ ¥5,000</span>`
+                        : `<span class="no">⚠ ยอดก่อน VAT ${yen(base)} ไม่ถึง ¥5,000 ใบนี้อาจขอคืนไม่ได้</span>`);
+        } catch (err) { res.innerHTML = `<span class="no">${esc(err.message)}</span>`; }
+      }
+    }
+    $('#eSave').textContent = amount && !isNaN(amount) ? `บันทึก ${yen(amount)}` : 'บันทึก';
+  }
+  box.oninput = upd; upd();
+  if (!e) setTimeout(() => $('#eAmt') && $('#eAmt').focus(), 280);
+
+  $('#eSave').onclick = () => {
+    const amount = parseJpy($('#eAmt').value);
+    if (!amount) return toast('ใส่จำนวนเงินเป็นเยน', true), $('#eAmt').focus();
+    if (!cat) return toast('เลือกหมวดก่อน', true);
+    const own = owners();
+    if (!own.length) return toast('เลือกคนหารอย่างน้อย 1 คน', true);
+    const data = { walletId: segVal('eWallet'), amount, owners: own, category: cat, note: $('#eNote').value };
+    if ($('#eTaxOn').checked) { data.tax = taxInput(amount); data.store = $('#eStore').value; } else data.tax = null;
+    if (whenTouched && $('#eWhen').value) data.at = new Date($('#eWhen').value).toISOString();
+    const ok = safe(() => { if (e) store.updateExpense(e.id, data); else { if (!data.tax) delete data.tax; store.addExpense(data); } });
+    if (ok) { closeSheet(); toast(e ? 'บันทึกการแก้ไขแล้ว' : `บันทึก ${yen(amount)} แล้ว`); render(); }
+  };
+  if (e) $('#eDel').onclick = () => {
+    if (!confirm(`ลบรายจ่าย ${yen(e.amount)}${e.note ? ' (' + e.note + ')' : ''}?`)) return;
+    safe(() => store.deleteExpense(e.id)) && (closeSheet(), toast('ลบแล้ว'), render());
+  };
+}
+
+render();
+
+// ===== ใช้งานออฟไลน์ (Service Worker) — ทำงานเฉพาะตอนเปิดผ่านเว็บ https ไม่ใช่เปิดไฟล์ในเครื่อง =====
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) toast('มีเวอร์ชันใหม่แล้ว ปิดแอปแล้วเปิดใหม่อีกครั้งเพื่อใช้');
+    hadController = true;
+  });
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    // เช็กเวอร์ชันใหม่ทุกครั้งที่กลับมาเปิดแอป (ถ้ามีเน็ต)
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {});
+}
+// ขอให้ระบบไม่ลบข้อมูลเมื่อพื้นที่เครื่องใกล้เต็ม (ถ้าเบราว์เซอร์รองรับ)
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+</script>
+</body>
+</html>
